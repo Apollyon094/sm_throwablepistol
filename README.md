@@ -18,7 +18,6 @@
                                                                      ;:  `   ;;     
                                                                        :'''':       
                                                                                     
-```
 ------------------------------------------------------------------------------
 sm_foocrowbar | Foo's throwing Crowbars and Stun Sticks
 Copyright (c) 2013 - 2018 Foo Games | www.foo-games.com <foobarhl@gmail.com>
@@ -101,3 +100,4 @@ A: Fiddle with the settings.  Throwing knives has proven to be pretty fun in
 
 
 ^D
+```
