@@ -67,7 +67,8 @@ Configuration: cfg/sourcemod/plugin.sm_foocrowbar.cfg
   sm_foocrowbar_mintime       : Minimum time between throwing a crowbar
   sm_foocrowbar_throwndamage  : How much damage to inflict on a player when hit by a crowbar/stunstick
   sm_foocrowbar_debug         : Enable console debugging of the plugin
-
+  sm_foocrowbar_notifymsg     : Whether to advise of crowbar availability (0 to disable, 1 to print a message on spawn)
+  
 ### Admin Flag Requirements ###
   sm_foocrowbar_requiredflag  : Specifies what admin flag is required to use the plugin.  Leave "" to not required
 
@@ -89,6 +90,7 @@ A: Fiddle with the settings.  Throwing knives has proven to be pretty fun in
    CSS.
 
 ## Change Log ##
+ * 0.21 : Add an option to disable crowbar availability message (sm_foocrowbar_notifymsg), and make the unavailable sound file configurable
  * 0.20 : Correct an issue with explosions not working due to prop_physics change in previous version.  NOTE:  CVARS HAVE CHANGED IN THIS VERSION
  * 0.18 : Fixed a problem with donator interface on servers without donator installed.
  * 0.17 : Added simple donator interface support.  New cvars:  sm_foocrowbar_donator_level  and sm_foocrowbar_donator_maxperspawn

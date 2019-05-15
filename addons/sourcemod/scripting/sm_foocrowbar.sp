@@ -27,7 +27,7 @@
 #undef REQUIRE_PLUGIN
 #include <donator>
 
-#define VERSION "0.20"
+#define VERSION "0.21"
 
 public Plugin:myinfo = {
 	name = "[foo] bar's crowbar",
@@ -40,6 +40,7 @@ public Plugin:myinfo = {
 enum EPlayerSetting
 {
 	Float:e_lastAttackTime,
+        Float:e_lastWarnTime,
 	e_numThrows,	
 	e_allowedThrows,
 	keyBuffer,
@@ -66,6 +67,9 @@ new Handle:g_hCrowbarFlags = INVALID_HANDLE;
 new Handle:g_hCrowbarDonatorLevel = INVALID_HANDLE;
 new Handle:g_hCrowbarDonatorMaxSpawn = INVALID_HANDLE;
 new Handle:g_hDebug = INVALID_HANDLE;
+new Handle:g_hNotifyMessage = INVALID_HANDLE;
+new Handle:g_hUnavailableSound = INVALID_HANDLE;
+
 new bool:hasDonator = false;
 
 
@@ -78,8 +82,15 @@ new Float:flMinThrowTime = 1.0;
 new g_iRequiredFlags = 0;
 new g_iRequiredDonatorLevel = 0;
 new g_iDonatorMaxCrowbarsPerSpawn = 3;
+new g_iNotifyMessage = 1;
+new String:szUnavailableSound[1024];
 
 new iDebug = 0;
+
+
+new Float:now = 0.0;
+//new Float:tdiff = 0.0;
+//new Float:lastwarn = 0.0;
 
 public APLRes:AskPluginLoad2(Handle:myself, bool:late, String:error[], err_max)
 {
@@ -124,14 +135,19 @@ public OnPluginStart()
 	g_hCrowbarFlags = CreateConVar("sm_foocrowbar_requiredflag", "", "Admin Flag a player has to have to use throwing crowbars/stunsticks.  Leave blank for no flag requirement");
 	HookConVarChange(g_hCrowbarFlags, OnConVarChanged);
 
+	g_hNotifyMessage = CreateConVar("sm_foocrowbar_notifymsg", "1", "When or if to display crowbar availability.  0 to disable.  1 at spawn.  ");
+	HookConVarChange(g_hNotifyMessage, OnConVarChanged);
 
-	for (new i = 1; i <= MaxClients; i++)
-	{
+	g_hUnavailableSound = CreateConVar("sm_foocrowbar_unavailable_sound", "common/wpn_denyselect.wav", "Sound to play if crowbar isn't available to throw");
+	HookConVarChange(g_hUnavailableSound, OnConVarChanged);
+
+	for (new i = 1; i <= MaxClients; i++) {
 		if (IsClientInGame(i))
 		{
 			SDKHook(i, SDKHook_OnTakeDamage, OnTakeDamage);
 		}
 	}
+
 	HookEvent("player_spawn", Event_PlayerSpawn);
 
 	g_Crowbars = CreateTrie();
@@ -163,11 +179,18 @@ public OnConfigsExecuted()
 	GetConVarString(g_hCrowbarFlags, szRequiredFlags, sizeof(szRequiredFlags));
 	g_iRequiredDonatorLevel = GetConVarInt(g_hCrowbarDonatorLevel);
 	g_iDonatorMaxCrowbarsPerSpawn = GetConVarInt(g_hCrowbarDonatorMaxSpawn);
+	g_iNotifyMessage = GetConVarInt(g_hNotifyMessage);
+
+	GetConVarString(g_hUnavailableSound, szUnavailableSound, sizeof(szUnavailableSound));
+
+	PrecacheSound(szUnavailableSound, true);
+//	AddFileToDownloadsTable(szUnavailableSound);
+
 	iDebug = GetConVarInt(g_hDebug);
 
 	TrimString(szRequiredFlags);
 	if(szRequiredFlags[0]=='\0'){
-		g_iRequiredFlags = 0;
+
 	} else { 
 		g_iRequiredFlags = ReadFlagString(szRequiredFlags);
 	}
@@ -197,6 +220,7 @@ public Action:Event_PlayerSpawn(Handle:event, const String:name[], bool:dontBroa
 	}
 	
 	playerSettings[client][e_numThrows] = 0;
+
 	if(hasDonator==true) {
 		playerSettings[client][e_allowedThrows] = IsPlayerDonator(client) ? g_iDonatorMaxCrowbarsPerSpawn : iMaxCrowbarsPerSpawn;
 	} else {
@@ -226,10 +250,12 @@ public Action:Event_PlayerSpawn(Handle:event, const String:name[], bool:dontBroa
 	}
 
 
-	if(playerSettings[client][e_allowedThrows] > 0 ) {
-		PrintToChat(client, "You have %d throwing %s!", playerSettings[client][e_allowedThrows], weaponString);
-	} else {
-		PrintToChat(client, "You have a LOT of throwing %s!", weaponString);
+	if(g_iNotifyMessage == 1 ){
+		if(playerSettings[client][e_allowedThrows] > 0 ) {
+			PrintToChat(client, "You have %d throwing %s!", playerSettings[client][e_allowedThrows], weaponString);
+		} else {
+			PrintToChat(client, "You have a LOT of throwing %s!", weaponString);
+		}
 	}
 
 	return Plugin_Continue;
@@ -242,8 +268,7 @@ public OnClientPutInServer(client)
 	InitPlayerSettings(client);
 }
 
-public Action:OnTakeDamage(victim, &attacker, &inflictor, &Float:damage, &damagetype, &weapon,
-								Float:damageForce[3], Float:damagePosition[3], damagecustom)
+public Action:OnTakeDamage(victim, &attacker, &inflictor, &Float:damage, &damagetype, &weapon, Float:damageForce[3], Float:damagePosition[3], damagecustom)
 {
 	decl String:attackerWeapon[30];
 	GetEdictClassname(inflictor, attackerWeapon, sizeof(attackerWeapon));
@@ -293,26 +318,28 @@ public Action:OnPlayerRunCmd(client, &iButtons, &Impulse, Float:fVelocity[3], Fl
 		return Plugin_Continue;
 	}
 
-	decl iActiveWeapon;
-	new Float:now = GetGameTime();
+	now = GetGameTime();
+
 	if( playerSettings[client][e_lastAttackTime] != 0.0 && (now - playerSettings[client][e_lastAttackTime]) < flMinThrowTime ){
 		return Plugin_Continue;
 	}
 
+	decl iActiveWeapon;
 	iActiveWeapon = GetEntPropEnt(client, Prop_Data, "m_hActiveWeapon");
 
 	if(iActiveWeapon != -1 && IsValidEntity(iActiveWeapon) && IsValidEdict(iActiveWeapon) ) {
 		decl String:weapon[64];	
 
 		GetEdictClassname(iActiveWeapon, weapon, sizeof(weapon));	
-		if((StrEqual(weapon, "weapon_crowbar") || StrEqual(weapon, "weapon_stunstick")) && (iButtons & IN_ATTACK2 )) {
 
+		if((StrEqual(weapon, "weapon_crowbar") || StrEqual(weapon, "weapon_stunstick")) && (iButtons & IN_ATTACK2 )) {
 
 			playerSettings[client][e_lastAttackTime] = now;
 
 			if(playerSettings[client][e_allowedThrows] > 0  && playerSettings[client][e_numThrows] >= playerSettings[client][e_allowedThrows] ) {
 				PrintToChat(client, "You don't have any throwing crowbars left!");
-				EmitSoundToAll("common/warning.wav", client);
+				playerSettings[client][e_lastWarnTime] = GetGameTime();
+				EmitSoundToAll(szUnavailableSound, client);
 				return Plugin_Continue;
 			}
 
@@ -338,6 +365,7 @@ public explode(entity)
 	if(iDebug){
 		PrintToServer("Creating explosion at %f/%f/%f", position[0], position[1], position[2]);
 	}
+
 	new owner = GetEntPropEnt(entity, Prop_Send, "m_hOwnerEntity");
 	if(iDebug){
 		PrintToServer("Owner entity of the crowbar was %d", owner);
@@ -452,7 +480,7 @@ ThrowCrowbar(client, meleeType)
 	TeleportEntity(ent, origin, fwd, velocity);
 
 	playerSettings[client][e_numThrows]++;
-
+	playerSettings[client][e_lastWarnTime] = GetGameTime();
 
 	decl String:buffer[25];
 	new ref = EntIndexToEntRef(ent);
@@ -529,6 +557,7 @@ public bool:IsAllowed(client)
 	return false;
 
 }
+
 /*
 Debug_PrintButtons(client, buttons)
 {
