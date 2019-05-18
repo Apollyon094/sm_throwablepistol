@@ -27,7 +27,7 @@
 #undef REQUIRE_PLUGIN
 #include <donator>
 
-#define VERSION "0.21"
+#define VERSION "0.22"
 
 public Plugin:myinfo = {
 	name = "[foo] bar's crowbar",
@@ -69,6 +69,7 @@ new Handle:g_hCrowbarDonatorMaxSpawn = INVALID_HANDLE;
 new Handle:g_hDebug = INVALID_HANDLE;
 new Handle:g_hNotifyMessage = INVALID_HANDLE;
 new Handle:g_hUnavailableSound = INVALID_HANDLE;
+new Handle:g_hLastWord = INVALID_HANDLE;
 
 new bool:hasDonator = false;
 
@@ -83,6 +84,8 @@ new g_iRequiredFlags = 0;
 new g_iRequiredDonatorLevel = 0;
 new g_iDonatorMaxCrowbarsPerSpawn = 3;
 new g_iNotifyMessage = 1;
+new g_iLastWord = 0;
+
 new String:szUnavailableSound[1024];
 
 new iDebug = 0;
@@ -141,6 +144,9 @@ public OnPluginStart()
 	g_hUnavailableSound = CreateConVar("sm_foocrowbar_unavailable_sound", "common/wpn_denyselect.wav", "Sound to play if crowbar isn't available to throw");
 	HookConVarChange(g_hUnavailableSound, OnConVarChanged);
 
+	g_hLastWord = CreateConVar("sm_foocrowbar_lastword", "0", "Whether to allow players to throw crowbar(s) after they're dead");
+	HookConVarChange(g_hLastWord, OnConVarChanged);
+
 	for (new i = 1; i <= MaxClients; i++) {
 		if (IsClientInGame(i))
 		{
@@ -180,6 +186,7 @@ public OnConfigsExecuted()
 	g_iRequiredDonatorLevel = GetConVarInt(g_hCrowbarDonatorLevel);
 	g_iDonatorMaxCrowbarsPerSpawn = GetConVarInt(g_hCrowbarDonatorMaxSpawn);
 	g_iNotifyMessage = GetConVarInt(g_hNotifyMessage);
+	g_iLastWord = GetConVarInt(g_hLastWord);
 
 	GetConVarString(g_hUnavailableSound, szUnavailableSound, sizeof(szUnavailableSound));
 
@@ -314,7 +321,15 @@ public Action:OnTakeDamage(victim, &attacker, &inflictor, &Float:damage, &damage
 public Action:OnPlayerRunCmd(client, &iButtons, &Impulse, Float:fVelocity[3], Float:fAngles[3], &iWeapon)
 {
 
+	new iTimeLeft;
+
 	if(playerSettings[client][e_allowedThrows]==-1 ) {
+		return Plugin_Continue;
+	}
+
+	GetMapTimeLeft(iTimeLeft);
+
+	if((!IsPlayerAlive(client) || iTimeLeft<=0) && !g_iLastWord){ 	// Note: timeleft may be negative on servers with infinite time, in which case we should check GetMapTimeLimit too
 		return Plugin_Continue;
 	}
 

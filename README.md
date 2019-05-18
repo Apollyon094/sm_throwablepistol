@@ -20,7 +20,7 @@
                                                                                     
 ------------------------------------------------------------------------------
 sm_foocrowbar | Foo's throwing Crowbars and Stun Sticks
-Copyright (c) 2013 - 2018 Foo Games | www.foo-games.com <foobarhl@gmail.com>
+Copyright (c) 2013 - 2019 Foo Games | www.foo-games.com <foobarhl@gmail.com>
 Licensed under the GPLv3.  See LICENSE for terms.
 
 Optional Support and Maintenance is available from www.foo-games.com
@@ -68,6 +68,7 @@ Configuration: cfg/sourcemod/plugin.sm_foocrowbar.cfg
   sm_foocrowbar_throwndamage  : How much damage to inflict on a player when hit by a crowbar/stunstick
   sm_foocrowbar_debug         : Enable console debugging of the plugin
   sm_foocrowbar_notifymsg     : Whether to advise of crowbar availability (0 to disable, 1 to print a message on spawn)
+  sm_foocrowbar_lastword      : Whether players may throw crowbars when they're dead
   
 ### Admin Flag Requirements ###
   sm_foocrowbar_requiredflag  : Specifies what admin flag is required to use the plugin.  Leave "" to not required
@@ -90,6 +91,7 @@ A: Fiddle with the settings.  Throwing knives has proven to be pretty fun in
    CSS.
 
 ## Change Log ##
+ * 0.22 : Add "last word" convar to allow players to throw crowbar(s) when they're dead
  * 0.21 : Add an option to disable crowbar availability message (sm_foocrowbar_notifymsg), and make the unavailable sound file configurable
  * 0.20 : Correct an issue with explosions not working due to prop_physics change in previous version.  NOTE:  CVARS HAVE CHANGED IN THIS VERSION
  * 0.18 : Fixed a problem with donator interface on servers without donator installed.
