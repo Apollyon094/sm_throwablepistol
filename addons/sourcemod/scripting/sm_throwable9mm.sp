@@ -1,6 +1,6 @@
 /*
  * sm_throwable9mm.sp: [fjc] apollyon094's throwable pistol thing
- * Copyright (c) 2018-2020 [fjc] apollyon094 <apollyon094@protonmail.com> | http://steamcommunity.com/id/notapollo05/ 
+ * Copyright (c) 2018-2020 [fjc] apollyon094 <apollyon094@protonmail.com> | http://steamcommunity.com/id/notapollo95/ 
  * Website: apollyon093.blogspot.com
  *
  * This program is free software: you can redistribute it and/or modify
