@@ -1,7 +1,7 @@
 /*
- * sm_foocrowbar.sp: [foo] bar's crowbar
- * Copyright (c) 2014-2018 [foo] bar <foobarhl@gmail.com> | http://steamcommunity.com/id/foo-bar/ 
- * Website: www.foo-games.com
+ * sm_throwable9mm.sp: [fjc] apollyon094's throwable pistol thing
+ * Copyright (c) 2018-2020 [fjc] apollyon094 <apollyon094@protonmail.com> | http://steamcommunity.com/id/notapollo05/ 
+ * Website: apollyon093.blogspot.com
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -114,7 +114,7 @@ public OnPluginStart()
 	g_hCrowbarExplodeMagnitude =  CreateConVar("sm_throwable9mm_explodedamage", "80", "Thrown Crowbar Explosion Magnitude.  Set to 0 to disable");
 	HookConVarChange(g_hCrowbarExplodeMagnitude, OnConVarChanged);
 
-	g_hCrowbarExplodeRadius = CreateConVar("sm_throwable9mm_exploderadius", "0", "Thrown Crowbar Explosion Radius Override.  Leave as 0 to scale to sm_foocrowbar_explodedamage");
+	g_hCrowbarExplodeRadius = CreateConVar("sm_throwable9mm_exploderadius", "0", "Thrown Crowbar Explosion Radius Override.  Leave as 0 to scale to sm_throwable9mm_explodedamage");
 	HookConVarChange(g_hCrowbarExplodeRadius, OnConVarChanged);
 
 	g_hCrowbarThrownDamage = CreateConVar("sm_throwable9mm_throwndamage", "80", "Damage a Thrown Crowbar should inflict");
